@@ -114,4 +114,9 @@ object Lab2 extends jsy.util.JsyApplication {
     println(pretty(v))
   }
 
+  override def main(args: Array[String]): Unit = {
+    println(((2 - 1 << 3) + (2 << 3 - 1)))
+    0
+  }
+
 }
