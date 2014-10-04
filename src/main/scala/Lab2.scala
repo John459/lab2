@@ -54,6 +54,8 @@ object Lab2 extends jsy.util.JsyApplication {
     require(isValue(v))
     (v: @unchecked) match {
       case N(n) => n
+      case B(b) => if (b) 1.0d else 0.0d
+      case S(s) => s.toDouble
       case _ => throw new UnsupportedOperationException
     }
   }
@@ -62,6 +64,8 @@ object Lab2 extends jsy.util.JsyApplication {
     require(isValue(v))
     (v: @unchecked) match {
       case B(b) => b
+      case N(n) => if (n == 0.0d) false else true
+      case S(s) => s.toBoolean
       case _ => throw new UnsupportedOperationException
     }
   }
@@ -70,6 +74,8 @@ object Lab2 extends jsy.util.JsyApplication {
     require(isValue(v))
     (v: @unchecked) match {
       case S(s) => s
+      case N(n) => n + ""
+      case B(b) => b.toString()
       case Undefined => "undefined"
       case _ => throw new UnsupportedOperationException
     }
@@ -81,10 +87,43 @@ object Lab2 extends jsy.util.JsyApplication {
 
     e match {
       /* Base Cases */
-      
+      case N(_) | B(_) | S(_) | Undefined => e
       /* Inductive Cases */
+      case Var(x) => eToVal(get(env, x))
+      case ConstDecl(x, e1, e2) => val e1Val = eToVal(e1); eval(extend(env, x, e1Val), e2)
+      case If(e1, e2, e3) => if (toBoolean(e1)) eToVal(e2) else eToVal(e3)
       case Print(e1) => println(pretty(eToVal(e1))); Undefined
-
+      case Unary(uop, e1) => uop match {
+        case Neg => N(-toNumber(eToVal(e1)))
+        case Not => B(!toBoolean(eToVal(e1)))
+        case _ => throw new UnsupportedOperationException
+      }
+      case Binary(bop, e1, e2) => bop match {
+        case Plus => N(toNumber(eToVal(e1)) + toNumber(eToVal(e2)))
+        case Minus => N(toNumber(eToVal(e1)) - toNumber(eToVal(e2)))
+        case Times => N(toNumber(eToVal(e1)) * toNumber(eToVal(e2)))
+        case Div => N(toNumber(eToVal(e1)) / toNumber(eToVal(e2)))
+        case Eq => B(eToVal(e1) == eToVal(e2))
+        case Ne => B(!(eToVal(e1) == eToVal(e2)))
+        case Lt => B(toNumber(eToVal(e1)) < toNumber(eToVal(e2)))
+        case Le => B(toNumber(eToVal(e1)) <= toNumber(eToVal(e2)))
+        case Gt => B(toNumber(eToVal(e1)) > toNumber(eToVal(e2)))
+        case Ge => B(toNumber(eToVal(e1)) >= toNumber(eToVal(e2)))
+        case And =>
+          val e1Val = eToVal(e1);
+          val e2Val = eToVal(e2);
+          if (!toBoolean(e1Val)) e1Val
+          else if (!toBoolean(e2Val)) e2Val
+          else B(true)
+        case Or =>
+          val e1Val = eToVal(e1);
+          val e2Val = eToVal(e2);
+          if (toBoolean(e1Val)) e1Val
+          else if (toBoolean(e2Val)) e2Val
+          else B(false)
+        case Seq => eToVal(e1); eToVal(e2)
+        case _ => throw new UnsupportedOperationException
+      }
       case _ => throw new UnsupportedOperationException
     }
   }
@@ -112,11 +151,6 @@ object Lab2 extends jsy.util.JsyApplication {
     val v = eval(expr)
     
     println(pretty(v))
-  }
-
-  override def main(args: Array[String]): Unit = {
-    println(((2 - 1 << 3) + (2 << 3 - 1)))
-    0
   }
 
 }
